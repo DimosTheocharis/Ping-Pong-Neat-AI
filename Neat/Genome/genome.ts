@@ -1,8 +1,8 @@
-import NodeGene from "../NodeGene/NodeGene";
 import ConnectionGene from "../ConnectionGene/connectionGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
 import { Counter } from "../utils";
 import BaseClass from "../baseClass";
+import NodeGene from "../NodeGene/NodeGene";
 
 /**
  * Represents a neural network that consists of Nodes (neurons) and Connections (synapses).
@@ -33,6 +33,15 @@ class Genome extends BaseClass {
     /*----------------------------------------Getters Methods----------------------------------------*/
     public get _connections(): Map<number, ConnectionGene> {
         return this.connections;
+    }
+
+    /*----------------------------------------Setter Methods ----------------------------------------*/
+    public set _nodes(nodes: Map<number, NodeGene>) {
+        this.nodes = nodes;
+    }
+
+    public set _connections(connections: Map<number, ConnectionGene>) {
+        this.connections = connections;
     }
 
     /*----------------------------------------Public Methods----------------------------------------*/
@@ -73,15 +82,6 @@ class Genome extends BaseClass {
         return genomicDistance;
     }
 
-
-    /*----------------------------------------Setter Methods ----------------------------------------*/
-    public set _nodes(nodes: Map<number, NodeGene>) {
-        this.nodes = nodes;
-    }
-
-    public set _connections(connections: Map<number, ConnectionGene>) {
-        this.connections = connections;
-    }
 
     /*----------------------------------------Private Methods----------------------------------------*/
 

@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import Genome from "../../../Neat/Genome/genome";
+import Population from "../../../Neat/population";
 
-const myFirstGenome: Genome = new Genome(1, 3, 1);
+const population: Population = new Population(5);
 
-console.log(myFirstGenome.nodes);
-console.log(myFirstGenome.connections);
+population.initPopulation();
+
 
 
 @Component({
