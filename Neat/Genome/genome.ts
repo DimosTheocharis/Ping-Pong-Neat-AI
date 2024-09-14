@@ -2,24 +2,25 @@ import NodeGene from "../NodeGene/NodeGene";
 import ConnectionGene from "../ConnectionGene/connectionGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
 import { Counter } from "../utils";
-
+import BaseClass from "../baseClass";
 
 /**
  * Represents a neural network that consists of Nodes (neurons) and Connections (synapses).
  */
-class Genome {
-    public nodes!: Map<number, NodeGene>;
-    public connections!: Map<number, ConnectionGene>;
-    private key: number;
-
-    public bestNode = new NodeGene(10, NodeGeneType.INPUT);
+class Genome extends BaseClass {
+    private nodes!: Map<number, NodeGene>;
+    private connections!: Map<number, ConnectionGene>;
 
     private nodeKeyCounter: Counter;
     private connectionKeyCounter: Counter; 
+
+    static C1: number = 1; // The coefficient for the excess nodes
+    static C2: number = 1; // The coefficient for the disjoint nodes
+    static C3: number = 0.4; // The coefficient for the weight difference
     
 
     public constructor(key: number, totalInputNodes: number, totalOutputNodes: number) {
-        this.key = key;
+        super(key);
 
         this.nodeKeyCounter = new Counter();
         this.connectionKeyCounter = new Counter();
@@ -28,6 +29,61 @@ class Genome {
 
         this.initializeGenome(totalInputNodes, totalOutputNodes);
     }
+
+    /*----------------------------------------Getters Methods----------------------------------------*/
+    public get _connections(): Map<number, ConnectionGene> {
+        return this.connections;
+    }
+
+    /*----------------------------------------Public Methods----------------------------------------*/
+
+    /**
+     * Calculates and returns the genomic distance between this genome and the given genome
+     * distance = (c1 * E) / N + (c2 * D) / N + c3 * W
+     * where:
+     * E = the number of excess genes
+     * D = the number of disjoint genes
+     * W = the average weight difference of matching genes
+     * N = the number of connection genes (of the genome with the most connection genes)
+     */
+    public distance(genome: Genome): number {
+        let genomicDistance: number = 0;
+
+        const {disjointGenes, excessGenes} = this.findDisjointAndExcessGenes(genome); 
+        const matchingGeneKeys: number[] = this.findMatchingGeneKeys(genome);
+
+
+        const E: number = excessGenes.length;
+        const D: number = disjointGenes.length;
+        const N: number = Math.max(this._connections.size, genome._connections.size);
+
+        let totalWeightDifference: number = 0;
+        matchingGeneKeys.forEach((key: number) => {
+            totalWeightDifference += Math.abs(this._connections.get(key)!._weight - genome._connections.get(key)!._weight);
+        })
+
+        const W: number = matchingGeneKeys.length > 0 ? totalWeightDifference / matchingGeneKeys.length : 0;
+
+        if (N > 0) {
+            genomicDistance = (Genome.C1 * E) / N + (Genome.C2 * D) / N + Genome.C3 * W;
+        } else {
+            genomicDistance = Genome.C3 * W;
+        }
+ 
+        return genomicDistance;
+    }
+
+
+    /*----------------------------------------Setter Methods ----------------------------------------*/
+    public set _nodes(nodes: Map<number, NodeGene>) {
+        this.nodes = nodes;
+    }
+
+    public set _connections(connections: Map<number, ConnectionGene>) {
+        this.connections = connections;
+    }
+
+    /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
      * Initializes the genome, setting up all the necessary structure.
@@ -94,6 +150,87 @@ class Genome {
         })
 
         return nodes;
+    }
+
+    /**
+     * Finds the disjoint and the excess connections genes. Both type of connection genes
+     * are present in one genome but not at the other. However,
+     * Disjoint genes: the keys of these genes must exist inside the range of the smallest gene
+     * Excess genes: the keys of these genes must exist outside the range of the smallest gene
+     */
+    private findDisjointAndExcessGenes(genome: Genome): {disjointGenes: ConnectionGene[], excessGenes: ConnectionGene[]} {
+        const disjointGenes: ConnectionGene[] = [];
+        const excessGenes: ConnectionGene[] = [];
+
+        let smallGenome: Genome;
+        let bigGenome: Genome; // Its biggest key is greater than smallGenome's biggest key
+
+        if (this.isMoreAdvancedThan(genome)) {
+            bigGenome = this;
+            smallGenome = genome;
+        } else {
+            bigGenome = genome;
+            smallGenome = this;
+        }
+
+        const minimumConnectionGenes: number = smallGenome._connections.size;
+
+        // Find the disjoint connection genes that belong to the small genome
+        smallGenome._connections.forEach((gene: ConnectionGene, key: number) => {
+            if (!bigGenome._connections.has(key)) {
+                // The current key is not present in the keys of bigGenome
+                disjointGenes.push(gene);
+            }
+        })
+
+
+        // Find the disjoint connection genes that belong to the big genome
+        bigGenome._connections.forEach((gene: ConnectionGene, key: number) => {
+            if (!smallGenome._connections.has(key)) {
+                // The current key is not present in the keys of smallGenome
+                if (key <= minimumConnectionGenes) {
+                    // Disjoint gene
+                    disjointGenes.push(gene);
+                } {
+                    // Excess gene
+                    excessGenes.push(gene);
+                }
+            }
+        })
+
+        
+
+        return {
+            disjointGenes: disjointGenes,
+            excessGenes: excessGenes
+        }
+    }
+
+    /**
+     * Finds the keys of the connections genes that are present in both genomes
+     */
+    private findMatchingGeneKeys(genome: Genome): number[] {
+        const matchingGeneKeys: number[] = [];
+
+        this._connections.forEach((gene: ConnectionGene, key: number) => {
+            if (genome._connections.has(key)) {
+                matchingGeneKeys.push(key);
+            }
+        })
+
+        return matchingGeneKeys;
+    }
+
+    /**
+     * Returns true if the biggest connection-key of the current genome is bigger than
+     * the corresponding of the genome in the parameters
+     */
+    private isMoreAdvancedThan(genome: Genome): boolean {
+        // Find the biggest key of the connections of each genome among the current genome and the parameter genome
+        const a: number = Math.max(...this._connections.keys());
+        const b: number = Math.max(...genome._connections.keys());
+
+        return a >= b;
     }
 }
 

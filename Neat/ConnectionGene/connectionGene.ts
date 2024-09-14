@@ -9,13 +9,25 @@ class ConnectionGene {
     private nodeTo: NodeGene;
     private weight!: number;
 
-    public constructor(key: number, nodeFrom: NodeGene, nodeTo: NodeGene) {
+    public constructor(key: number, nodeFrom: NodeGene, nodeTo: NodeGene, weight?: number) {
         this.key = key;
         this.nodeFrom = nodeFrom;
         this.nodeTo = nodeTo;
 
         this.initializeWeight();
+
+        if (weight) {
+            this.weight = weight;
+        }
     }
+
+    /*----------------------------------------Getters Methods----------------------------------------*/
+    public get _weight(): number {
+        return this.weight;
+    }
+
+
+    /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
      * Initializes the weight of the connection with a random number between -1 and 1
