@@ -2,7 +2,9 @@ import ConnectionGene from "../ConnectionGene/connectionGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
 import { Counter } from "../utils";
 import BaseClass from "../baseClass";
-import NodeGene from "../NodeGene/NodeGene";
+import NodeGene from "../NodeGene/nodeGene";
+import InnovationDatabase from "../InnovationDatabase/innovationDatabase";
+import { AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
 
 /**
  * Represents a neural network that consists of Nodes (neurons) and Connections (synapses).
@@ -33,6 +35,10 @@ class Genome extends BaseClass {
     /*----------------------------------------Getters Methods----------------------------------------*/
     public get _connections(): Map<number, ConnectionGene> {
         return this.connections;
+    }
+
+    public get _nodes(): Map<number, NodeGene> {
+        return this.nodes;
     }
 
     /*----------------------------------------Setter Methods ----------------------------------------*/
@@ -80,6 +86,46 @@ class Genome extends BaseClass {
         }
  
         return genomicDistance;
+    }
+
+
+    /**
+     * Adds a new node in the graph by splitting an existing random connection into 2 new connections that connect with the
+     * new node. The old connection gets disabled.
+     */
+    public addNodeMutation(innovationDatabase: InnovationDatabase): void {
+        // Randomly find a connection that is going to be splitted.
+        const randomConnection: ConnectionGene = Array.from(this.connections.values())[Math.floor(Math.random() * this.connections.size)];
+        
+        // Disable the connection
+        randomConnection._activated = false;
+
+        // Check if the mutation that adds a node between the nodeFrom and nodeTo of the randomConnection, has happened again.
+        const existingMutation: AddNodeMutation | undefined = innovationDatabase.checkAddNodeMutationExists(randomConnection._nodeFrom.key, randomConnection._nodeTo.key);
+
+        let newNodeGene: NodeGene; // The new node
+        let newConnectionA: ConnectionGene; // The first new connection. Connects the nodeFrom and the new node.
+        let newConnectionB: ConnectionGene; // The second new connection. Connects the new node and the nodeTo.
+        
+        if (existingMutation) {
+            newNodeGene = new NodeGene(existingMutation.nodeID, NodeGeneType.HIDDEN);
+            newConnectionA = new ConnectionGene(existingMutation.innovationNumberA, this.nodes.get(existingMutation.nodeFrom)!, newNodeGene, 1); 
+            newConnectionB = new ConnectionGene(existingMutation.innovationNumberB, newNodeGene, this.nodes.get(existingMutation.nodeTo)!, randomConnection._weight);
+        } else {
+            // Create a new addNodeMutation about this mutation
+            const newAddNodeMutation: AddNodeMutation = innovationDatabase.createAddNodeMutation(randomConnection._nodeFrom.key, randomConnection._nodeTo.key);
+
+            newNodeGene = new NodeGene(newAddNodeMutation.nodeID, NodeGeneType.HIDDEN);
+            newConnectionA = new ConnectionGene(newAddNodeMutation.innovationNumberA, randomConnection._nodeFrom, newNodeGene, 1);
+            newConnectionB = new ConnectionGene(newAddNodeMutation.innovationNumberB, newNodeGene, randomConnection._nodeTo, randomConnection._weight);
+        }
+    
+        // Add the new node in the list of the nodes of the genome
+        this.nodes.set(newNodeGene.key, newNodeGene);
+
+        // Add the new two connections in the list of the connections of the genome
+        this.connections.set(newConnectionA.key, newConnectionA);
+        this.connections.set(newConnectionB.key, newConnectionB);
     }
 
 

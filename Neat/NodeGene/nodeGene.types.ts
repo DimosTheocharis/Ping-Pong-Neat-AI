@@ -1,6 +1,7 @@
 enum NodeGeneType {
     INPUT = "INPUT",
-    OUTPUT = "OUTPUT"
+    OUTPUT = "OUTPUT",
+    HIDDEN = "HIDDEN"
 };
 
 export { NodeGeneType }

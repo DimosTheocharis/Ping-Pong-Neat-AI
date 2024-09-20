@@ -32,7 +32,7 @@ class InnovationDatabase {
     /**
      * Creates a new AddNodeRecord
      */
-    public createAddNodeMutation(nodeFrom: number, nodeTo: number): void {
+    public createAddNodeMutation(nodeFrom: number, nodeTo: number): AddNodeMutation {
         console.assert(nodeFrom > 0, `nodeFrom should be positive. Received: ${nodeFrom}`);
         console.assert(nodeTo > 0, `nodeTo should be positive. Received: ${nodeTo}`);
 
@@ -48,6 +48,8 @@ class InnovationDatabase {
         console.assert(this.checkAddNodeMutationExists(nodeFrom, nodeTo) == undefined, `The addNode mutation between nodes ${nodeFrom}, ${nodeTo} already exists!`);
 
         this.addNodeMutations.push(newRecord);
+
+        return newRecord;
     }
 
     /**

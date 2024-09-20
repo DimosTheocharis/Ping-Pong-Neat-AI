@@ -1,7 +1,9 @@
 import Genome from "../Genome/genome";
-import NodeGene from "../NodeGene/NodeGene";
+import NodeGene from "../NodeGene/nodeGene";
 import ConnectionGene from "../ConnectionGene/connectionGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
+import InnovationDatabase from "../InnovationDatabase/innovationDatabase";
+import { AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
 
 describe("Distance function", () => {
     it("Should compute the genomic distance of 2 nodes correctly", () => {
@@ -38,6 +40,103 @@ describe("Distance function", () => {
         genomeB._connections = connectionGeneMapB;
 
 
-        expect(genomeA.distance(genomeB)).toBeCloseTo(0.44)
+        expect(genomeA.distance(genomeB)).toBeCloseTo(0.44);
+    })
+})
+
+
+describe("addNodeMutation function", () => {
+    it("Should add a new node somewhere in the network. The mutation has not happened before.", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        myGenome.addNodeMutation(innovationDatabase);
+
+        expect(Reflect.get(innovationDatabase, "addNodeMutations").length).toBe(1);
+        expect(myGenome._nodes.size).toBe(totalInitialNodes + 1);
+        expect(myGenome._connections.size).toBe(totalInitialConnections + 2);
+
+        // Find the addNode mutation
+        const addNodeMutation: AddNodeMutation = Array.from<AddNodeMutation>(Reflect.get(innovationDatabase, "addNodeMutations").values())[0];
+
+        // There should be one exactly disabled connection
+        expect(Array.from(myGenome._connections.values()).filter((value: ConnectionGene) => value._activated == false).length).toBe(1);
+
+        // Find the disabled connection
+        const disabledConnection: ConnectionGene = Array.from(myGenome._connections.values()).find((value: ConnectionGene) => value._activated == false)!;
+
+        expect(addNodeMutation.innovationNumberA).toBe(totalInitialConnections + 1);
+        expect(addNodeMutation.innovationNumberB).toBe(totalInitialConnections + 2);
+        expect(addNodeMutation.nodeFrom).toBe(disabledConnection._nodeFrom.key);
+        expect(addNodeMutation.nodeTo).toBe(disabledConnection._nodeTo.key);
+        expect(addNodeMutation.nodeID).toBe(totalInitialNodes + 1);
+    })
+
+    it("Should add a new node somewhere in the network. The mutation has happened before.", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        // In order to test this scenario, i will consider that both of the 2 initial connections have been splitted by a addNode mutation.
+        // As a result, the connection that will be randomly selected, will already have been mutated for sure.
+
+        const addNodeMutationA: AddNodeMutation = {
+            id: 1,
+            nodeFrom: 1,
+            nodeTo: 3,
+            innovationNumberA: totalInitialConnections + 1,
+            innovationNumberB: totalInitialConnections + 2,
+            nodeID: totalInitialNodes + 1
+        }
+
+        const addNodeMutationB: AddNodeMutation = {
+            id: 2,
+            nodeFrom: 2,
+            nodeTo: 3,
+            innovationNumberA: totalInitialConnections + 3,
+            innovationNumberB: totalInitialConnections + 4,
+            nodeID: totalInitialNodes + 2
+        }
+
+        // Add the 2 addNode mutations to the innovation database
+        Reflect.set(innovationDatabase, "addNodeMutations", [addNodeMutationA, addNodeMutationB]);
+
+        myGenome.addNodeMutation(innovationDatabase);
+
+        expect(Reflect.get(innovationDatabase, "addNodeMutations").length).toBe(2);
+        expect(myGenome._nodes.size).toBe(totalInitialNodes + 1);
+        expect(myGenome._connections.size).toBe(totalInitialConnections + 2);
+
+        // There should be one exactly disabled connection
+        expect(Array.from(myGenome._connections.values()).filter((value: ConnectionGene) => value._activated == false).length).toBe(1);
+
+        // Find the disabled connection
+        const disabledConnection: ConnectionGene = Array.from(myGenome._connections.values()).find((value: ConnectionGene) => value._activated == false)!;
+
+        // Find the addNode mutation
+        const addNodeMutation: AddNodeMutation | undefined = Array.from<AddNodeMutation>(Reflect.get(innovationDatabase, "addNodeMutations").values()).find(
+            (value: AddNodeMutation) => {
+                return value.nodeFrom == disabledConnection._nodeFrom.key && value.nodeTo == disabledConnection._nodeTo.key;
+            }
+        );
+
+        expect(addNodeMutation).toBeDefined();
+
+        expect(addNodeMutation!.nodeFrom).toBe(disabledConnection._nodeFrom.key);
+        expect(addNodeMutation!.nodeTo).toBe(disabledConnection._nodeTo.key);
+        expect(addNodeMutation!.nodeID).toBe(totalInitialNodes + 1);
     })
 })
