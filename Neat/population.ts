@@ -1,14 +1,13 @@
 import Genome from "./Genome/genome";
-import NodeGene from "./NodeGene/NodeGene";
 import SpeciesSet from "./Species/species";
-import { Counter } from "./utils";
+import { Counter } from "./utils/counter";
 
 
 /**
  * Represents the population of the genomes
  */
 class Population {
-    private population: Map<number, Genome>;
+    public population: Map<number, Genome>;
     private populationSize: number;
     private generationCount: number;
     private genomeCounter: Counter;

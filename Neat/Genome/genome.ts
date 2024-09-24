@@ -1,10 +1,11 @@
 import ConnectionGene from "../ConnectionGene/connectionGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
-import { Counter } from "../utils";
+import { Counter } from "../utils/counter";
 import BaseClass from "../baseClass";
 import NodeGene from "../NodeGene/nodeGene";
 import InnovationDatabase from "../InnovationDatabase/innovationDatabase";
-import { AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
+import { AddConnectionMutation, AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
+import Graph from "../utils/graph";
 
 /**
  * Represents a neural network that consists of Nodes (neurons) and Connections (synapses).
@@ -19,6 +20,10 @@ class Genome extends BaseClass {
     static C1: number = 1; // The coefficient for the excess nodes
     static C2: number = 1; // The coefficient for the disjoint nodes
     static C3: number = 0.4; // The coefficient for the weight difference
+
+    private addNodeProbability: number = 0.05;
+    private addConnectionProbability: number = 0.15;
+    private mutateWeightProbability: number = 0.8;
     
 
     public constructor(key: number, totalInputNodes: number, totalOutputNodes: number) {
@@ -88,6 +93,35 @@ class Genome extends BaseClass {
         return genomicDistance;
     }
 
+    /**
+     * Mutates the genome in various ways:
+     * 1) Add a node where a connection used to be
+     * 2) Add a connection between 2 unconnected nodes
+     * 3) Change the weight of a connection 
+     */
+    public mutate(innovationDatabase: InnovationDatabase): void {
+        const randomNumber: number = Math.random();
+
+        if (randomNumber <= this.addNodeProbability) {
+            this.addNodeMutation(innovationDatabase);
+            console.log(`Μετάλλαξη: Προσθήκη κόμβου στο γονιδίωμα ${this._key}`);
+        } 
+
+        if (randomNumber <= this.addConnectionProbability) {
+            const success: boolean = this.addConnectionMutation(innovationDatabase);
+            if (success) {
+                console.log(`Μετάλλαξη: Προσθήκη σύνδεσης στο γονιδίωμα ${this._key}`);
+            } else {
+                console.log(`ΑΠΟΤΥΧΙΑ μετάλλαξης: Προσθήκη σύνδεσης στο γονιδίωμα ${this._key}`);
+            }
+        }
+
+        if (randomNumber <= this.mutateWeightProbability) {
+            this.weightMutation();
+            console.log(`Μετάλλαξη: Αλλαγή βάρους σύνδεσης στο γονιδίωμα ${this._key}`);
+        }
+    }
+
 
     /**
      * Adds a new node in the graph by splitting an existing random connection into 2 new connections that connect with the
@@ -95,7 +129,7 @@ class Genome extends BaseClass {
      */
     public addNodeMutation(innovationDatabase: InnovationDatabase): void {
         // Randomly find a connection that is going to be splitted.
-        const randomConnection: ConnectionGene = Array.from(this.connections.values())[Math.floor(Math.random() * this.connections.size)];
+        const randomConnection: ConnectionGene = this.getRandomConnection();
         
         // Disable the connection
         randomConnection._activated = false;
@@ -126,6 +160,51 @@ class Genome extends BaseClass {
         // Add the new two connections in the list of the connections of the genome
         this.connections.set(newConnectionA.key, newConnectionA);
         this.connections.set(newConnectionB.key, newConnectionB);
+    }
+
+    /**
+     * Connects 2 previously unconnected nodes. Specifically, it randomly selects 2 nodes and if they can get connected
+     * without breaking any condition, then a new ConnectionGene is created. The conditions are: 
+     * 1) The nodes should not be already connected
+       2) Self-connections are not allowed
+     * 3) Two input nodes cannot be connected
+     * 4) Two output nodes cannot be connected
+     * 5) The addition of the connection should not provoke any circle
+     * @returns true/false based on whether the nodes connected succesfully or not
+     */
+    public addConnectionMutation(innovationDatabase: InnovationDatabase): boolean {
+        // Randomly find two nodes
+        const nodeFrom: NodeGene = this.getRandomNode();
+        const nodeTo: NodeGene = this.getRandomNode();
+
+        // If the two nodes are now allowed to connect, then terminate the mutation.
+        if (!this.canConnect(nodeFrom, nodeTo)) return false;
+
+        // Check if this mutation, that connects these two nodes, has happened in the past in some other genome
+        const existingMutation: AddConnectionMutation | undefined = innovationDatabase.checkAddConnectionMutationExists(nodeFrom.key, nodeTo.key);
+
+        let newConnectionGene: ConnectionGene;
+
+        if (existingMutation) {
+            newConnectionGene = new ConnectionGene(existingMutation.innovationNumber, nodeFrom, nodeTo);
+        } else {
+            const newAddConnectionMutation: AddConnectionMutation = innovationDatabase.createAddConnectionMutation(nodeFrom.key, nodeTo.key);
+
+            newConnectionGene = new ConnectionGene(newAddConnectionMutation.innovationNumber, nodeFrom, nodeTo);
+        }
+
+        this.connections.set(newConnectionGene.key, newConnectionGene);
+
+        return true;
+    }
+
+
+    /**
+     * Randomly picks a connection and mutate its weight.
+     */
+    public weightMutation(): void {
+        const randomConnection: ConnectionGene = this.getRandomConnection();
+        randomConnection.mutateWeight();
     }
 
 
@@ -277,6 +356,86 @@ class Genome extends BaseClass {
         const b: number = Math.max(...genome._connections.keys());
 
         return a >= b;
+    }
+
+    /**
+     * Checks if the two given nodes can get connected, without breaking any condition.
+     */
+    private canConnect(nodeFrom: NodeGene, nodeTo: NodeGene): boolean {
+        // 1) The nodes should not be already connected
+        const existingConnection: ConnectionGene | undefined = Array.from(this.connections.values()).find((value: ConnectionGene) => {
+            return value._nodeFrom == nodeFrom && value._nodeTo == nodeTo;
+        })
+
+        if (existingConnection) {
+            console.log(`The nodes ${nodeFrom.key} and ${nodeTo.key} are already connected.`);
+            return false;
+        }
+        // 2) Self-connections are not allowed
+        if (nodeFrom == nodeTo) {
+            console.log(`The nodes ${nodeFrom.key} and ${nodeTo.key} are not distinct.`);
+            return false;
+        }
+
+        // 3) Two input nodes cannot be connected
+        if (nodeFrom.type == NodeGeneType.INPUT && nodeTo.type == NodeGeneType.INPUT) {
+            console.log(`The nodes ${nodeFrom.key} and ${nodeTo.key} are both input nodes.`);
+            return false;
+        }
+        
+        // 4) Two output nodes cannot be connected
+        if (nodeFrom.type == NodeGeneType.OUTPUT && nodeTo.type == NodeGeneType.OUTPUT) {
+            console.log(`The nodes ${nodeFrom.key} and ${nodeTo.key} are both output nodes.`);
+            return false;
+        }
+
+        // 5) The addition of the connection should not provoke any circle
+        const createsCircle: boolean = Graph.createsCircle(this.extractConnectionKeys(), {nodeFrom: nodeFrom.key, nodeTo: nodeTo.key});
+        if (createsCircle) {
+            console.log(`The connection (${nodeFrom.key} -> ${nodeTo.key}) will provoke a circle.`);
+            return false;
+        }
+
+
+        return true;
+    }
+
+    /**
+     * Randomly selects a node of this genome and returns it.
+     */
+    private getRandomNode(): NodeGene {
+        const randomKey: number = Array.from(this.nodes.keys()).sort()[Math.floor(Math.random() * this.nodes.size)];
+
+        return this.nodes.get(randomKey)!;
+    }
+
+    /**
+     * Randomly selects a connection of this genome and returns it.
+     */
+    private getRandomConnection(): ConnectionGene {
+        const randomKey: number = Array.from(this.connections.keys()).sort()[Math.floor(Math.random() * this.connections.size)];
+
+        return this.connections.get(randomKey)!;
+    }
+
+    private extractConnectionKeys(): Map<number, number[]> {
+        const connectionKeys: Map<number, number[]> = new Map();
+
+        // Initialize the neighbors array for each node
+        this.nodes.forEach((node: NodeGene, key: number) => {
+            connectionKeys.set(key, []);
+        })
+
+        // Add the information (nodeFrom, nodeTo) into the connectionKeys map, for each connection
+        this.connections.forEach((connection: ConnectionGene, key: number) => {
+            const neighbors: number[] = connectionKeys.get(connection._nodeFrom.key)!;
+
+            neighbors.push(connection._nodeTo.key);
+            
+            connectionKeys.set(connection._nodeFrom.key, neighbors);
+        })
+
+        return connectionKeys;
     }
 }
 

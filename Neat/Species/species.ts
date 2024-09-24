@@ -1,6 +1,6 @@
 import Genome from "../Genome/genome";
 import BaseClass from "../baseClass";
-import { Counter } from "../utils";
+import { Counter } from "../utils/counter";
 
 
 class Species extends BaseClass {

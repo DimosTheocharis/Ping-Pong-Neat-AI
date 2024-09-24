@@ -16,4 +16,4 @@ interface AddConnectionMutation {
     innovationNumber: number;
 }
 
-export { AddNodeMutation, AddConnectionMutation };
+export type { AddNodeMutation, AddConnectionMutation };

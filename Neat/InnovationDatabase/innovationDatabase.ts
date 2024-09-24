@@ -1,4 +1,4 @@
-import { Counter } from "../utils";
+import { Counter } from "../utils/counter";
 import { AddNodeMutation, AddConnectionMutation } from "./innovationDatabase.types";
 
 /**
@@ -55,7 +55,7 @@ class InnovationDatabase {
     /**
      * Creates a new AddConnectionRecord
      */
-    public createAddConnectionMutation(nodeFrom: number, nodeTo: number): void {
+    public createAddConnectionMutation(nodeFrom: number, nodeTo: number): AddConnectionMutation {
         console.assert(nodeFrom > 0, `nodeFrom should be positive. Received: ${nodeFrom}`);
         console.assert(nodeTo > 0, `nodeTo should be positive. Received: ${nodeTo}`);
 
@@ -69,6 +69,8 @@ class InnovationDatabase {
         console.assert(this.checkAddConnectionMutationExists(nodeFrom, nodeTo) == undefined, `The addConnection mutation between nodes ${nodeFrom}, ${nodeTo} already exists!`);
     
         this.addConnectionMutations.push(newRecord);
+
+        return newRecord;
     }
 
     /**

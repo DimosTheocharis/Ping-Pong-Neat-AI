@@ -3,7 +3,15 @@ import NodeGene from "../NodeGene/nodeGene";
 import ConnectionGene from "../ConnectionGene/connectionGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
 import InnovationDatabase from "../InnovationDatabase/innovationDatabase";
-import { AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
+import { AddConnectionMutation, AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
+
+// In the scenarios where i use Genomes with 2 input nodes and one output node, based on the way that i have 
+// built the nodes and the connections, the following apply:
+// NodeId = 1 -> input
+// NodeId = 2 -> input
+// NodeId = 3 -> output
+// InnovationNumber = 1 -> Connection (1, 3)
+// InnovationNumber = 2 -> Connection (2, 3)
 
 describe("Distance function", () => {
     it("Should compute the genomic distance of 2 nodes correctly", () => {
@@ -117,7 +125,11 @@ describe("addNodeMutation function", () => {
         myGenome.addNodeMutation(innovationDatabase);
 
         expect(Reflect.get(innovationDatabase, "addNodeMutations").length).toBe(2);
+
+        // I expect that a new node has been created
         expect(myGenome._nodes.size).toBe(totalInitialNodes + 1);
+
+        // I expect that two new connections has been created
         expect(myGenome._connections.size).toBe(totalInitialConnections + 2);
 
         // There should be one exactly disabled connection
@@ -134,9 +146,249 @@ describe("addNodeMutation function", () => {
         );
 
         expect(addNodeMutation).toBeDefined();
+    })
+})
 
-        expect(addNodeMutation!.nodeFrom).toBe(disabledConnection._nodeFrom.key);
-        expect(addNodeMutation!.nodeTo).toBe(disabledConnection._nodeTo.key);
-        expect(addNodeMutation!.nodeID).toBe(totalInitialNodes + 1);
+
+
+describe("addConnectionMutation function", () => {
+    it("Should return false because the nodes 1 and 3 are already connected.", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+        // Tell the Math.random function to return 0.3 and 0.9 in the first 2 calls. This way, because we have 3 nodes,
+        // the first and third nodes will be selected for connection
+        const randomSpy = jest.spyOn(Math, "random")
+            .mockImplementationOnce(() => 0.3)
+            .mockImplementationOnce(() => 0.9);
+
+        
+        const succesfullConnection: boolean = myGenome.addConnectionMutation(innovationDatabase);
+
+        expect(succesfullConnection).toBe(false);
+        expect(consoleSpy).toHaveBeenCalledWith("The nodes 1 and 3 are already connected.");
+
+        consoleSpy.mockRestore();
+        randomSpy.mockRestore();
+    })
+
+    it("Should return false because the nodes that are going to connect, (1, 1), are the same.", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+        // Tell the Math.random function to return 0.3 and 0.3 in the first 2 calls. This way, because we have 3 nodes,
+        // the first node will be selected both times for connection
+        const randomSpy = jest.spyOn(Math, "random")
+            .mockImplementationOnce(() => 0.3)
+            .mockImplementationOnce(() => 0.3);
+
+        
+        const succesfullConnection: boolean = myGenome.addConnectionMutation(innovationDatabase);
+
+        expect(succesfullConnection).toBe(false);
+        expect(consoleSpy).toHaveBeenCalledWith("The nodes 1 and 1 are not distinct.");
+
+        consoleSpy.mockRestore();
+        randomSpy.mockRestore();
+    })
+
+
+    it("Should return false because the nodes 1 and 2 are both input nodes.", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+        // Tell the Math.random function to return 0.3 and 0.6 in the first 2 calls. This way, because we have 3 nodes,
+        // the first and second nodes will be selected for connection
+        const randomSpy = jest.spyOn(Math, "random")
+            .mockImplementationOnce(() => 0.3)
+            .mockImplementationOnce(() => 0.6);
+
+        
+        const succesfullConnection: boolean = myGenome.addConnectionMutation(innovationDatabase);
+
+        expect(succesfullConnection).toBe(false);
+        expect(consoleSpy).toHaveBeenCalledWith("The nodes 1 and 2 are both input nodes.");
+
+        consoleSpy.mockRestore();
+        randomSpy.mockRestore();
+    })
+
+    it("Should return false because the addition of the connection (2 -> 3) will provoke a circle.", () => {
+        const inputNodes: number = 1;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        // Add a hidden node (id = 3) between node 1 and node 2
+        myGenome.addNodeMutation(innovationDatabase);
+
+
+        const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+        // Tell the Math.random function to return 0.6 and 0.9 in the first 2 calls. This way, because we have 3 nodes,
+        // the second and third nodes will be selected for connection
+        const randomSpy = jest.spyOn(Math, "random")
+            .mockImplementationOnce(() => 0.6)
+            .mockImplementationOnce(() => 0.9);
+
+        
+        const succesfullConnection: boolean = myGenome.addConnectionMutation(innovationDatabase);
+
+        expect(succesfullConnection).toBe(false);
+        expect(consoleSpy).toHaveBeenCalledWith("The connection (2 -> 3) will provoke a circle.");
+
+        consoleSpy.mockRestore();
+        randomSpy.mockRestore();
+    })
+
+
+    it("Should return true because the nodes 2 and 4 are not already connected. The mutation has not happened before", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        // Create a new mutation that adds a new node (4) between nodes 1 and 3
+        const newMutation: AddNodeMutation = innovationDatabase.createAddNodeMutation(1, 3);
+
+        // Create the node based on the mutation
+        const newNodeGene: NodeGene = new NodeGene(newMutation.nodeID, NodeGeneType.HIDDEN);
+
+        // Get the nodeFrom, nodeTo which are the nodes 1 and 3
+        const nodeFrom: NodeGene = myGenome._nodes.get(1)!;
+        const nodeTo: NodeGene = myGenome._nodes.get(3)!;
+
+        // Create the two new connections based on the mutation
+        const newConnectionA: ConnectionGene = new ConnectionGene(newMutation.innovationNumberA, nodeFrom, newNodeGene);
+        const newConnectionB: ConnectionGene = new ConnectionGene(newMutation.innovationNumberB, newNodeGene, nodeTo);
+
+        // Add the new node and the new connections to the genome
+        Reflect.get(myGenome, "nodes").set(4, newNodeGene);
+        Reflect.get(myGenome, "connections").set(newConnectionA.key, newConnectionA);
+        Reflect.get(myGenome, "connections").set(newConnectionB.key, newConnectionB);
+
+        // Tell the Math.random function to return 0.4 and 0.8 in the first 2 calls. This way, because we have 4 nodes,
+        // the second and fourth nodes will be selected for connection
+        const randomSpy = jest.spyOn(Math, "random")
+            .mockImplementationOnce(() => 0.4)
+            .mockImplementationOnce(() => 0.8);
+        
+        const succesfullConnection: boolean = myGenome.addConnectionMutation(innovationDatabase);
+
+        expect(succesfullConnection).toBe(true);
+
+        expect(Reflect.get(innovationDatabase, "addConnectionMutations").length).toBe(1);
+        expect(innovationDatabase.checkAddConnectionMutationExists(2, 4)).toBeDefined();
+        expect(myGenome._connections.size).toBe(totalInitialConnections + 2 + 1);
+
+        const foundConnection: ConnectionGene | undefined = Array.from(myGenome._connections.values()).find(
+            (value: ConnectionGene) => {
+                return value._nodeFrom.key == 2 && value._nodeTo.key == 4;
+            }
+        )
+
+        expect(foundConnection).toBeDefined();
+
+        randomSpy.mockRestore();
+    })
+
+
+    it("Should return true because the nodes 2 and 4 are not already connected. The mutation has happened before", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+
+        const myGenome: Genome = new Genome(1, inputNodes, outputNodes);
+
+        // Initialize the innovation database 
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        // Create a new mutation that adds a new node (4) between nodes 1 and 3
+        const newMutation: AddNodeMutation = innovationDatabase.createAddNodeMutation(1, 3);
+
+        // Create the node based on the mutation
+        const newNodeGene: NodeGene = new NodeGene(newMutation.nodeID, NodeGeneType.HIDDEN);
+
+        // Get the nodeFrom, nodeTo which are the nodes 1 and 3
+        const nodeFrom: NodeGene = myGenome._nodes.get(1)!;
+        const nodeTo: NodeGene = myGenome._nodes.get(3)!;
+
+        // Create the two new connections based on the mutation
+        const newConnectionA: ConnectionGene = new ConnectionGene(newMutation.innovationNumberA, nodeFrom, newNodeGene);
+        const newConnectionB: ConnectionGene = new ConnectionGene(newMutation.innovationNumberB, newNodeGene, nodeTo);
+
+        // Add the new node and the new connections to the genome
+        Reflect.get(myGenome, "nodes").set(4, newNodeGene);
+        Reflect.get(myGenome, "connections").set(newConnectionA.key, newConnectionA);
+        Reflect.get(myGenome, "connections").set(newConnectionB.key, newConnectionB);
+
+        // Create the addConnectionMutation
+        const addConnectionMutation: AddConnectionMutation = innovationDatabase.createAddConnectionMutation(2, 4);
+
+        const consoleSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+
+        // Tell the Math.random function to return 0.4 and 0.8 in the first 2 calls. This way, because we have 4 nodes,
+        // the second and fourth nodes will be selected for connection
+        const randomSpy = jest.spyOn(Math, "random")
+            .mockImplementationOnce(() => 0.4)
+            .mockImplementationOnce(() => 0.8);
+        
+        const succesfullConnection: boolean = myGenome.addConnectionMutation(innovationDatabase);
+
+        expect(succesfullConnection).toBe(true);
+
+        expect(Reflect.get(innovationDatabase, "addConnectionMutations").length).toBe(1);
+        expect(innovationDatabase.checkAddConnectionMutationExists(2, 4)).toBeDefined();
+        expect(myGenome._connections.size).toBe(totalInitialConnections + 2 + 1);
+
+        const foundConnection: ConnectionGene | undefined = Array.from(myGenome._connections.values()).find(
+            (value: ConnectionGene) => {
+                return value._nodeFrom.key == 2 && value._nodeTo.key == 4;
+            }
+        )
+
+        expect(foundConnection).toBeDefined();
+        expect(foundConnection!.key).toBe(addConnectionMutation.innovationNumber);
+
+        consoleSpy.mockRestore();
+        randomSpy.mockRestore();
     })
 })

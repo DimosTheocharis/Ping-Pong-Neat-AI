@@ -10,17 +10,28 @@ class ConnectionGene {
     private weight!: number;
     private activated!: boolean;
 
+    /**
+     * Creates a new ConnectionGene with the given parameters. If weight is undefined, then a random weight
+     * is assigned 
+     * @param key 
+     * @param nodeFrom 
+     * @param nodeTo 
+     * @param weight 
+     */
     public constructor(key: number, nodeFrom: NodeGene, nodeTo: NodeGene, weight?: number) {
         this.key = key;
         this.nodeFrom = nodeFrom;
         this.nodeTo = nodeTo;
         this.activated = true;
 
-        this.initializeWeight();
+        this.initializeWeight(weight);
+    }
 
-        if (weight) {
-            this.weight = weight;
-        }
+    /**
+     * Sets the weight of the connection with a random value between -1 and 1
+     */
+    public mutateWeight(): void {
+        this.weight = Math.random() * 2 - 1;
     }
 
     /*----------------------------------------Getters Methods----------------------------------------*/
@@ -49,10 +60,15 @@ class ConnectionGene {
     /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
-     * Initializes the weight of the connection with a random number between -1 and 1
+     * Initializes the weight of the connection with a random number between -1 and 1. This happens
+     * only if the parameter weight is defined
      */
-    private initializeWeight() {
-        this.weight = Math.random() * 2 - 1;
+    private initializeWeight(weight?: number) {
+        if (weight) {
+            this.weight = weight;
+        } else {
+            this.weight = Math.random() * 2 - 1;
+        }
     }
 }
 
