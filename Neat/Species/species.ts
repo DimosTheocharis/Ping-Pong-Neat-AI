@@ -26,8 +26,33 @@ class Species extends BaseClass {
      */
     public includeGenome(genome: Genome) {
         console.assert(this.members.get(genome._key) == undefined, `The genome ${genome} already exists at species with id = ${this._key}`);
-        
         this.members.set(genome._key, genome);
+    }
+
+    /**
+     * Calculates the number of the genomes that the particular species is going to contain in the next generation.
+     * The number of the genomes is proportional to the percentage of the fitness of the particular species to 
+     * the total fitness.
+     * @param totalFitness The total fitness of the whole population in the current generation
+     * @param populationSize The total number of genomes that belong to the population.
+     * @returns A float number. Should round up or down to the closer integer.
+     */
+    public computeNextGenerationTotalMembers(totalFitness: number, populationSize: number): number {
+        console.assert(totalFitness != 0, "The total fitness is 0... Can't calculate the number of genomes.");
+
+        // Compute the sum of the fitness of all genomes that belong to the particular species
+        let fitness: number = 0;
+        this.members.forEach((member: Genome, key: number) => {
+            fitness += member._fitness;
+        });
+
+        let totalMembers: number = fitness / totalFitness * populationSize;
+
+        return totalMembers;
+    }
+
+    public getNumberOfMembers(): number {
+        return this.members.size;
     }
 }
 
@@ -51,8 +76,6 @@ class SpeciesSet {
     public speciate(population: Genome[]) {
         
         population.forEach((genome: Genome) => {
-            console.log("Current genome:");
-            console.log(genome);
             let speciated: boolean = false; // Whether or not the genome was eventually included in some species
 
             this.speciesMap.forEach((species: Species, key: number) => {
@@ -64,10 +87,6 @@ class SpeciesSet {
                         // The current genome is similar to the representative. Place it in the current species
                         species.includeGenome(genome);
                         speciated = true;
-
-                        console.log("The genome placed in the current species:");
-                        console.log(distance);
-                        console.log(species);
                     }
                 }
             })
@@ -78,13 +97,9 @@ class SpeciesSet {
                 const newSpecies: Species = new Species(key, genome);
 
                 this.speciesMap.set(key, newSpecies);
-
-                console.log("New species created for the genome:");
-                console.log(newSpecies);
             }
         })
     }
-
 }
 
-export default SpeciesSet;
+export { SpeciesSet, Species };

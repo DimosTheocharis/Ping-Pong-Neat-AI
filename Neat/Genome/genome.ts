@@ -14,6 +14,8 @@ class Genome extends BaseClass {
     private nodes!: Map<number, NodeGene>;
     private connections!: Map<number, ConnectionGene>;
 
+    private fitness: number;
+
     private nodeKeyCounter: Counter;
     private connectionKeyCounter: Counter; 
 
@@ -33,6 +35,7 @@ class Genome extends BaseClass {
         this.connectionKeyCounter = new Counter();
         this.nodes = new Map();
         this.connections = new Map();
+        this.fitness = 0;
 
         this.initializeGenome(totalInputNodes, totalOutputNodes);
     }
@@ -46,6 +49,10 @@ class Genome extends BaseClass {
         return this.nodes;
     }
 
+    public get _fitness(): number {
+        return this.fitness;
+    }
+
     /*----------------------------------------Setter Methods ----------------------------------------*/
     public set _nodes(nodes: Map<number, NodeGene>) {
         this.nodes = nodes;
@@ -53,6 +60,10 @@ class Genome extends BaseClass {
 
     public set _connections(connections: Map<number, ConnectionGene>) {
         this.connections = connections;
+    }
+
+    public set _fitness(fitness: number) {
+        this.fitness = fitness;
     }
 
     /*----------------------------------------Public Methods----------------------------------------*/

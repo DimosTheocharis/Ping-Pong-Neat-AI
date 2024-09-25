@@ -14,6 +14,8 @@ class Population {
 
     private speciesSet: SpeciesSet;
 
+    private totalFitness: number | undefined = undefined;
+
     public constructor(populationSize: number) {
         this.population = new Map();
         this.populationSize = populationSize;
@@ -35,6 +37,23 @@ class Population {
         }
 
         this.speciesSet.speciate(Array.from(this.population.values()));
+    }
+
+    /**
+     * Sums up and returns the fitness of every genome of the current population
+     */
+    public getTotalFitness(): number {
+        if (this.totalFitness) {
+            return this.totalFitness;
+        }
+
+        let total: number = 0;
+        this.population.forEach((genome: Genome, key: number) => {
+            total += genome._fitness;
+        });
+
+        this.totalFitness = total;
+        return this.totalFitness;
     }
 }
 
