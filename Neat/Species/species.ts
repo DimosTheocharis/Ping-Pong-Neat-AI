@@ -7,10 +7,16 @@ class Species extends BaseClass {
     private members: Map<number, Genome>;
     private representative!: Genome; // the most central genome of the species. Has the minimum average distance
 
+    /**
+     * Creates a new species with the given {representative}. Includes the {representative} inside species' members.
+     * @param key 
+     * @param representative 
+     */
     public constructor(key: number, representative: Genome) {
         super(key);
         
         this.members = new Map();
+        this.members.set(representative._key, representative);
         this.representative = representative;
     }
 
