@@ -392,3 +392,125 @@ describe("addConnectionMutation function", () => {
         randomSpy.mockRestore();
     })
 })
+
+
+describe("isMoreAdvancedThan function", () => {
+    it("Should correctly find out that the first genome is more advanced that the second genome", () => {
+        const inputNodes: number = 2;
+        const outputNodes: number = 1;
+        const totalInitialNodes: number = inputNodes + outputNodes;
+        const totalInitialConnections: number = inputNodes * outputNodes;
+        
+        const genomeA: Genome = new Genome(1, inputNodes, outputNodes);
+        const genomeB: Genome = new Genome(2, inputNodes, outputNodes);
+
+        const innovationDatabase: InnovationDatabase = new InnovationDatabase(totalInitialConnections, totalInitialNodes);
+
+        genomeA.addNodeMutation(innovationDatabase);
+
+        expect(genomeA.isMoreAdvancedThan(genomeB)).toBe(true);
+        expect(genomeB.isMoreAdvancedThan(genomeA)).toBe(false);
+    })
+})
+
+
+describe("findDisjointGenes, findExcessGenes, findMatchingGeneKeys functions", () => {
+    it("Should find all the disjoint and excess genes of the 2 genomes and the keys of all \
+        matching connections.", () => {
+        const genomeA: Genome = new Genome(1, 0, 0);
+        const genomeB: Genome = new Genome(2, 0, 0);
+
+        // Nodes of genomeA
+        const nodeA1: NodeGene = new NodeGene(1, NodeGeneType.INPUT);
+        const nodeA2: NodeGene = new NodeGene(2, NodeGeneType.INPUT);
+        const nodeA3: NodeGene = new NodeGene(3, NodeGeneType.OUTPUT);
+        const nodeA5: NodeGene = new NodeGene(5, NodeGeneType.HIDDEN);
+
+        // Connections of genomeA
+        const connectionA1: ConnectionGene = new ConnectionGene(1, nodeA1, nodeA3);
+        connectionA1._activated = false;
+        const connectionA2: ConnectionGene = new ConnectionGene(2, nodeA2, nodeA3);
+        const connectionA3: ConnectionGene = new ConnectionGene(3, nodeA1, nodeA2);
+        const connectionA6: ConnectionGene = new ConnectionGene(6, nodeA1, nodeA5);
+        const connectionA7: ConnectionGene = new ConnectionGene(7, nodeA5, nodeA3);
+        const connectionA9: ConnectionGene = new ConnectionGene(9, nodeA2, nodeA5);
+
+        // Include nodes and connections of genomeA
+        genomeA.includeNode(nodeA1);
+        genomeA.includeNode(nodeA2);
+        genomeA.includeNode(nodeA3);
+        genomeA.includeNode(nodeA5);
+        genomeA.includeConnection(connectionA1);
+        genomeA.includeConnection(connectionA2);
+        genomeA.includeConnection(connectionA3);
+        genomeA.includeConnection(connectionA6);
+        genomeA.includeConnection(connectionA7);
+        genomeA.includeConnection(connectionA9);
+
+        // Nodes of genomeΒ
+        const nodeB1: NodeGene = new NodeGene(1, NodeGeneType.INPUT);
+        const nodeB2: NodeGene = new NodeGene(2, NodeGeneType.INPUT);
+        const nodeB3: NodeGene = new NodeGene(3, NodeGeneType.OUTPUT);
+        const nodeB4: NodeGene = new NodeGene(4, NodeGeneType.HIDDEN);
+        const nodeB5: NodeGene = new NodeGene(5, NodeGeneType.HIDDEN);
+
+        // Connections of genomeB
+        const connectionB1: ConnectionGene = new ConnectionGene(1, nodeB1, nodeB3);
+        connectionB1._activated = false;
+        const connectionB2: ConnectionGene = new ConnectionGene(2, nodeB2, nodeB3);
+        connectionB2._activated = false;
+        const connectionB4: ConnectionGene = new ConnectionGene(4, nodeB2, nodeB4);
+        const connectionB5: ConnectionGene = new ConnectionGene(5, nodeB4, nodeB3);
+        const connectionB6: ConnectionGene = new ConnectionGene(6, nodeB1, nodeB5);
+        const connectionB7: ConnectionGene = new ConnectionGene(7, nodeB5, nodeB3);
+        const connectionB8: ConnectionGene = new ConnectionGene(8, nodeB1, nodeB4);
+
+        // Include nodes and connections of genomeB
+        genomeB.includeNode(nodeB1);
+        genomeB.includeNode(nodeB2);
+        genomeB.includeNode(nodeB3);
+        genomeB.includeNode(nodeB4);
+        genomeB.includeNode(nodeB5);
+        genomeB.includeConnection(connectionB1);
+        genomeB.includeConnection(connectionB2);
+        genomeB.includeConnection(connectionB4);
+        genomeB.includeConnection(connectionB5);
+        genomeB.includeConnection(connectionB6);
+        genomeB.includeConnection(connectionB7);
+        genomeB.includeConnection(connectionB8);
+
+        // Run functions to get results
+        const disjointGenesA: ConnectionGene[] = genomeA.findDisjointGenes(genomeB);
+        const disjointGenesB: ConnectionGene[] = genomeB.findDisjointGenes(genomeA);
+        const excessGenesA: ConnectionGene[] = genomeA.findExcessGenes(genomeB);
+        const excessGenesB: ConnectionGene[] = genomeB.findExcessGenes(genomeA);
+        const matchingKeysA: number[] = genomeA.findMatchingGeneKeys(genomeB);
+        const matchingKeysB: number[] = genomeB.findMatchingGeneKeys(genomeA);
+
+        // Tests
+        expect(disjointGenesA).toHaveLength(1);
+        expect(disjointGenesA).toContain(connectionA3);
+
+        expect(disjointGenesB).toHaveLength(3);
+        expect(disjointGenesB).toContain(connectionB4);
+        expect(disjointGenesB).toContain(connectionB5);
+        expect(disjointGenesB).toContain(connectionB8);
+
+        expect(excessGenesA).toHaveLength(1);
+        expect(excessGenesA).toContain(connectionA9);
+
+        expect(excessGenesB).toHaveLength(0);
+
+        expect(matchingKeysA).toHaveLength(4);
+        expect(matchingKeysA).toContain(1);
+        expect(matchingKeysA).toContain(2);
+        expect(matchingKeysA).toContain(6);
+        expect(matchingKeysA).toContain(7);
+
+        expect(matchingKeysB).toHaveLength(4);
+        expect(matchingKeysB).toContain(1);
+        expect(matchingKeysB).toContain(2);
+        expect(matchingKeysB).toContain(6);
+        expect(matchingKeysB).toContain(7);
+    })
+})
