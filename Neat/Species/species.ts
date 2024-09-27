@@ -57,6 +57,9 @@ class Species extends BaseClass {
         return totalMembers;
     }
 
+    /**
+     * @returns the number of the members that this spieces currently has
+     */
     public getNumberOfMembers(): number {
         return this.members.size;
     }

@@ -80,7 +80,16 @@ class Genome extends BaseClass {
     public distance(genome: Genome): number {
         let genomicDistance: number = 0;
 
-        const {disjointGenes, excessGenes} = this.findDisjointAndExcessGenes(genome); 
+        let disjointGenes: ConnectionGene[] = this.findDisjointGenes(genome);
+        disjointGenes = disjointGenes.concat(genome.findDisjointGenes(this));
+
+        let excessGenes: ConnectionGene[];
+        if (this.isMoreAdvancedThan(genome)) {
+            excessGenes = this.findExcessGenes(genome);
+        } else {
+            excessGenes = genome.findExcessGenes(this);
+        }
+
         const matchingGeneKeys: number[] = this.findMatchingGeneKeys(genome);
 
 
@@ -218,7 +227,140 @@ class Genome extends BaseClass {
         randomConnection.mutateWeight();
     }
 
+    /**
+     * Finds the disjoint connections genes, which are connection genes that are present in one genome 
+     * but not at the other. However the keys of these genes must exist inside the range of the smallest,
+     * out of the 2, genome
+     */
+    public findDisjointGenes(genome: Genome): ConnectionGene[] {
+        const disjointGenes: ConnectionGene[] = [];
 
+        // Find the smallest key between the biggest key of the two genomes
+        const biggestKeyA: number = this.findBiggestConnectionKey();
+        const biggestKeyB: number = genome.findBiggestConnectionKey();
+        const smallestBiggestKey: number = Math.min(biggestKeyA, biggestKeyB);
+
+        this.connections.forEach((connection: ConnectionGene, key: number) => {
+            if (!genome.containsConnectionGene(connection) && key <= smallestBiggestKey) {
+                disjointGenes.push(connection);
+            }
+        })
+
+        return disjointGenes;
+    }
+
+    /**
+     * Finds the excess connections genes, which are connection genes that are present in one genome 
+     * but not at the other. However the keys of these genes must exist outside the range of the smallest,
+     * out of the 2, genome
+     */
+    public findExcessGenes(genome: Genome): ConnectionGene[] {
+        const excessGenes: ConnectionGene[] = [];
+
+        // Find the smallest key between the biggest key of the two genomes
+        const biggestKeyA: number = this.findBiggestConnectionKey();
+        const biggestKeyB: number = genome.findBiggestConnectionKey();
+        const smallestBiggestKey: number = Math.min(biggestKeyA, biggestKeyB);
+
+        this.connections.forEach((connection: ConnectionGene, key: number) => {
+            if (!genome.containsConnectionGene(connection) && key > smallestBiggestKey) {
+                excessGenes.push(connection);
+            }
+        })
+
+        return excessGenes;
+    }
+
+    /**
+     * Finds the keys of the connections genes that are present in both genomes
+     */
+    public findMatchingGeneKeys(genome: Genome): number[] {
+        const matchingGeneKeys: number[] = [];
+
+        this._connections.forEach((gene: ConnectionGene, key: number) => {
+            if (genome._connections.has(key)) {
+                matchingGeneKeys.push(key);
+            }
+        })
+
+        return matchingGeneKeys;
+    }
+
+    /**
+     * Checks if there is a connection with the same key as the key of the given connection
+     * @param connectionGene 
+     * @returns 
+     */
+    public containsConnectionGene(connectionGene: ConnectionGene): boolean {
+        return this.connections.get(connectionGene.key) != undefined;
+    }
+
+    /**
+     * Returns true if the biggest connection-key of the current genome is bigger than
+     * the corresponding of the genome in the parameters
+     */
+    public isMoreAdvancedThan(genome: Genome): boolean {
+        // Find the biggest key of the connections of each genome among the current genome and the parameter genome
+        const a: number = this.findBiggestConnectionKey();
+        const b: number = genome.findBiggestConnectionKey();
+
+        return a >= b;
+    }
+
+    /**
+     * Finds and returns the biggest key that a connection has
+     */
+    public findBiggestConnectionKey(): number {
+        return Math.max(...this.connections.keys());
+    }
+
+    /**
+     * Returns the connection that has as key the key in the parameters
+     * @param key 
+     * @returns 
+     */
+    public getConnection(key: number): ConnectionGene | undefined {
+        return this.connections.get(key);
+    }
+
+
+
+    /**
+     * Creates a new genome having the given {connections}. At first, the method finds the nodes that
+     * the genome should contain and create a copy of them. Then, it creates a copy of each connection using
+     * the copied nodes. The new genome is assigned the {key} as its node id
+     * @param connections 
+     * @param key
+     */
+    public static createGenomeFromConnections(connections: ConnectionGene[], key: number): Genome {
+        const newGenome: Genome = new Genome(key, 0, 0);
+
+        connections.forEach((connection: ConnectionGene) => {
+            const copiedConnection: ConnectionGene = connection.getCopy();
+
+            newGenome.includeConnection(copiedConnection);
+            newGenome.includeNode(copiedConnection._nodeFrom);
+            newGenome.includeNode(copiedConnection._nodeTo);
+        })
+
+        return newGenome;
+    }
+
+    /**
+     * Includes the given {connection} to the connections of the genome
+     * @param connection 
+     */
+    public includeConnection(connection: ConnectionGene): void {
+        this.connections.set(connection.key, connection);
+    }
+
+    /**
+     * Includes the given {node} to the nodes of the genome
+     * @param node 
+     */
+    public includeNode(node: NodeGene): void {
+        this.nodes.set(node.key, node);
+    }
     /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
@@ -286,87 +428,6 @@ class Genome extends BaseClass {
         })
 
         return nodes;
-    }
-
-    /**
-     * Finds the disjoint and the excess connections genes. Both type of connection genes
-     * are present in one genome but not at the other. However,
-     * Disjoint genes: the keys of these genes must exist inside the range of the smallest gene
-     * Excess genes: the keys of these genes must exist outside the range of the smallest gene
-     */
-    private findDisjointAndExcessGenes(genome: Genome): {disjointGenes: ConnectionGene[], excessGenes: ConnectionGene[]} {
-        const disjointGenes: ConnectionGene[] = [];
-        const excessGenes: ConnectionGene[] = [];
-
-        let smallGenome: Genome;
-        let bigGenome: Genome; // Its biggest key is greater than smallGenome's biggest key
-
-        if (this.isMoreAdvancedThan(genome)) {
-            bigGenome = this;
-            smallGenome = genome;
-        } else {
-            bigGenome = genome;
-            smallGenome = this;
-        }
-
-        const minimumConnectionGenes: number = smallGenome._connections.size;
-
-        // Find the disjoint connection genes that belong to the small genome
-        smallGenome._connections.forEach((gene: ConnectionGene, key: number) => {
-            if (!bigGenome._connections.has(key)) {
-                // The current key is not present in the keys of bigGenome
-                disjointGenes.push(gene);
-            }
-        })
-
-
-        // Find the disjoint connection genes that belong to the big genome
-        bigGenome._connections.forEach((gene: ConnectionGene, key: number) => {
-            if (!smallGenome._connections.has(key)) {
-                // The current key is not present in the keys of smallGenome
-                if (key <= minimumConnectionGenes) {
-                    // Disjoint gene
-                    disjointGenes.push(gene);
-                } {
-                    // Excess gene
-                    excessGenes.push(gene);
-                }
-            }
-        })
-
-        
-
-        return {
-            disjointGenes: disjointGenes,
-            excessGenes: excessGenes
-        }
-    }
-
-    /**
-     * Finds the keys of the connections genes that are present in both genomes
-     */
-    private findMatchingGeneKeys(genome: Genome): number[] {
-        const matchingGeneKeys: number[] = [];
-
-        this._connections.forEach((gene: ConnectionGene, key: number) => {
-            if (genome._connections.has(key)) {
-                matchingGeneKeys.push(key);
-            }
-        })
-
-        return matchingGeneKeys;
-    }
-
-    /**
-     * Returns true if the biggest connection-key of the current genome is bigger than
-     * the corresponding of the genome in the parameters
-     */
-    private isMoreAdvancedThan(genome: Genome): boolean {
-        // Find the biggest key of the connections of each genome among the current genome and the parameter genome
-        const a: number = Math.max(...this._connections.keys());
-        const b: number = Math.max(...genome._connections.keys());
-
-        return a >= b;
     }
 
     /**

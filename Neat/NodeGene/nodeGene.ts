@@ -18,6 +18,16 @@ class NodeGene {
     }
 
     /**
+     * Returns a brand new NodeGene that is identical with the current NodeGene.
+     */
+    public getCopy(): NodeGene {
+        const copy: NodeGene = new NodeGene(this.key, this.type);
+        copy.bias = this.bias;
+
+        return copy;
+    }
+
+    /**
      * Initializes the weight of the connection with a random number between -0.5 and 0.5
      */
     private initializeBias() {

@@ -34,6 +34,20 @@ class ConnectionGene {
         this.weight = Math.random() * 2 - 1;
     }
 
+    /**
+     * Returns a brand new ConnectionGene that is identical with the current ConnectionGene.
+     * It internally gets a copy of the nodes too
+     */
+    public getCopy(): ConnectionGene {
+        const nodeFromCopy: NodeGene = this.nodeFrom.getCopy();
+        const nodeToCopy: NodeGene = this.nodeTo.getCopy();
+
+        const copy: ConnectionGene = new ConnectionGene(this.key, nodeFromCopy, nodeToCopy, this.weight);
+        copy._activated = this.activated;
+
+        return copy;
+    }
+
     /*----------------------------------------Getters Methods----------------------------------------*/
     public get _weight(): number {
         return this.weight;
