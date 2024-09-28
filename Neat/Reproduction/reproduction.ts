@@ -21,7 +21,7 @@ class Reproduction {
      * @param genomeA 
      * @param genomeB 
      */
-    public crossover(genomeA: Genome, genomeB: Genome, key: number): Genome {
+    public static crossover(genomeA: Genome, genomeB: Genome, key: number): Genome {
         let dominant: Genome; // The most fit parent
         let submissive: Genome; // The other parent
         let equalFitnesses: boolean = false;
@@ -103,3 +103,5 @@ class Reproduction {
         return offspring;
     } 
 }
+
+export default Reproduction;
