@@ -33,3 +33,38 @@ describe("computeNextGenerationTotalMembers function", () => {
         expect(species.computeNextGenerationTotalMembers(totalFitness, populationSize)).toBeCloseTo(38.4, 1);
     })
 })
+
+
+describe("calculateProbabilities function", () => {
+    it("Should correctly computes the probability of selection for every genome in a particular species.", () => {
+        // Create genomes
+        const genome1: Genome = new Genome(1, 0, 0);
+        const genome2: Genome = new Genome(2, 0, 0);
+        const genome3: Genome = new Genome(3, 0, 0);
+        const genome4: Genome = new Genome(4, 0, 0);
+        const genome5: Genome = new Genome(5, 0, 0);
+
+        // Set fitnesses
+        genome1._fitness = 12.7;
+        genome2._fitness = 23.9;
+        genome3._fitness = 5.8;
+        genome4._fitness = 31.6;
+        genome5._fitness = 18.4;
+
+        // Create species and add genomes to its member list
+        const species: Species = new Species(1, genome1);
+        species.includeGenome(genome2);
+        species.includeGenome(genome3);
+        species.includeGenome(genome4);
+        species.includeGenome(genome5);
+
+        // Run function to get result
+        const probabilitiesMap: Map<number, number> = species.calculateProbabilities();
+
+        expect(probabilitiesMap.get(1)).toBeCloseTo(0.14);
+        expect(probabilitiesMap.get(2)).toBeCloseTo(0.26);
+        expect(probabilitiesMap.get(3)).toBeCloseTo(0.06);
+        expect(probabilitiesMap.get(4)).toBeCloseTo(0.34);
+        expect(probabilitiesMap.get(5)).toBeCloseTo(0.2);
+    })
+})

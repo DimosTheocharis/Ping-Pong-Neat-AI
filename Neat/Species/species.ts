@@ -46,11 +46,7 @@ class Species extends BaseClass {
     public computeNextGenerationTotalMembers(totalFitness: number, populationSize: number): number {
         console.assert(totalFitness != 0, "The total fitness is 0... Can't calculate the number of genomes.");
 
-        // Compute the sum of the fitness of all genomes that belong to the particular species
-        let fitness: number = 0;
-        this.members.forEach((member: Genome, key: number) => {
-            fitness += member._fitness;
-        });
+        const fitness: number = this.calculateSpeciesFitness();
 
         let totalMembers: number = fitness / totalFitness * populationSize;
 
@@ -63,13 +59,45 @@ class Species extends BaseClass {
     public getNumberOfMembers(): number {
         return this.members.size;
     }
+    
+    /**
+     * Calculates the probability of a genome to be selected based on its fitness.
+     * The probability is proportional to the ratio of genome fitness to total fitness
+     * @returns 
+     */
+    public calculateProbabilities(): Map<number, number> {
+        const probabilitiesMap: Map<number, number> = new Map();
+        const totalFitness: number = this.calculateSpeciesFitness();
+
+        console.assert(totalFitness != 0, "Total fitness is zero.");
+
+        this.members.forEach((member: Genome, key: number) => {
+            const probability: number = member._fitness / totalFitness;
+            probabilitiesMap.set(key, probability);
+        })
+
+        return probabilitiesMap;
+    }
+
+    /**
+     * Calculates the sum of fitness of every genome in this species
+     */
+    private calculateSpeciesFitness(): number {
+        let fitness: number = 0;
+
+        this.members.forEach((member: Genome, key: number) => {
+            fitness += member._fitness;
+        });
+
+        return fitness;
+    }
 }
 
 /**
  * A class that holds all the species of the current generation
  */
 class SpeciesSet {
-    private speciesMap: Map<number, Species>;
+    public speciesMap: Map<number, Species>;
     private genomicDistanceThreshold: number = 2;
 
     private speciesCounter: Counter;
