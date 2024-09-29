@@ -1,5 +1,6 @@
 import ConnectionGene from "../ConnectionGene/connectionGene";
 import Genome from "../Genome/genome";
+import { Logger } from "../Logger/logger";
 import { Species, SpeciesSet } from "../Species/species";
 import { Counter } from "../utils/counter";
 import Roulette from "../utils/roulette";
@@ -145,6 +146,12 @@ class Reproduction {
                 offspring = Reproduction.crossover(parent1, parent2, genomeCounter.next());
 
                 newPopulation.push(offspring);
+
+                Logger.logMessages("Crossover", [
+                    `Parent 1: ${parent1._key}`,
+                    `Parent 2: ${parent2._key}`,
+                    `Offspring: ${offspring._key}`
+                ])
             }
         })
 

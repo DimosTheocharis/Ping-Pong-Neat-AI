@@ -3,7 +3,7 @@ import NodeGene from "../NodeGene/nodeGene";
 /**
  * Represents a connection (synapse) between two nodes in the neural network. 
  */
-class ConnectionGene {
+class ConnectionGene extends Object {
     public key: number;
     private nodeFrom: NodeGene;
     private nodeTo: NodeGene;
@@ -19,6 +19,7 @@ class ConnectionGene {
      * @param weight 
      */
     public constructor(key: number, nodeFrom: NodeGene, nodeTo: NodeGene, weight?: number) {
+        super();
         this.key = key;
         this.nodeFrom = nodeFrom;
         this.nodeTo = nodeTo;
@@ -46,6 +47,10 @@ class ConnectionGene {
         copy._activated = this.activated;
 
         return copy;
+    }
+
+    public override toString(): string {
+        return `{InnovationNumber = ${this.key}, connection: (${this.nodeFrom.key} -> ${this.nodeTo.key}), weight: ${this.weight.toFixed(2)}, activated: ${this.activated}}`;
     }
 
     /*----------------------------------------Getters Methods----------------------------------------*/

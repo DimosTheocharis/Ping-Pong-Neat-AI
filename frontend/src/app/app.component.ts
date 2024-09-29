@@ -2,18 +2,16 @@ import { Component } from '@angular/core';
 import Genome from "../../../Neat/Genome/genome";
 import Population from "../../../Neat/population";
 import InnovationDatabase from '../../../Neat/InnovationDatabase/innovationDatabase';
+import Reproduction from "../../../Neat/Reproduction/reproduction";
+import { Logger } from '../../../Neat/Logger/logger';
 
-const population: Population = new Population(5);
+const populationSystem: Population = new Population(5);
 
-const innovationDatabase: InnovationDatabase = new InnovationDatabase(3, 4);
+populationSystem.run()
 
-population.initPopulation();
-
-population.population.forEach((genome: Genome) => {
-  genome.mutate(innovationDatabase);
-})
-
-
+// newPopulation.forEach((genome: Genome) => {
+//   Logger.logMessages([genome.toString()])
+// })
 
 @Component({
   selector: 'app-root',

@@ -3,12 +3,13 @@ import { NodeGeneType } from "./nodeGene.types";
 /**
  * Represents a node (neuron) in the neural network. 
  */
-class NodeGene {
+class NodeGene extends Object {
     public key: number;
     public type: NodeGeneType;
     public bias!: number; // Only for nodes with type = output or hidden
 
     public constructor(key: number, type: NodeGeneType) {
+        super();
         this.key = key;
         this.type = type;
 
@@ -25,6 +26,10 @@ class NodeGene {
         copy.bias = this.bias;
 
         return copy;
+    }
+
+    public override toString(): string {
+        return `{NodeId = ${this.key}, type = ${this.type}}`;
     }
 
     /**

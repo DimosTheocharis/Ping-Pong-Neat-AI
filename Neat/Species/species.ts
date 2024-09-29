@@ -120,7 +120,7 @@ class SpeciesSet {
     }
 
     /**
-     * Assigns the new given population to species. 
+     * Assigns the given population to species. 
      */
     public speciate(population: Genome[]) {
         

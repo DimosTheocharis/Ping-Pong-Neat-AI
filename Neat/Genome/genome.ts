@@ -6,6 +6,7 @@ import NodeGene from "../NodeGene/nodeGene";
 import InnovationDatabase from "../InnovationDatabase/innovationDatabase";
 import { AddConnectionMutation, AddNodeMutation } from "../InnovationDatabase/innovationDatabase.types";
 import Graph from "../utils/graph";
+import { Logger } from "../Logger/logger";
 
 /**
  * Represents a neural network that consists of Nodes (neurons) and Connections (synapses).
@@ -124,21 +125,14 @@ class Genome extends BaseClass {
 
         if (randomNumber <= this.addNodeProbability) {
             this.addNodeMutation(innovationDatabase);
-            console.log(`Μετάλλαξη: Προσθήκη κόμβου στο γονιδίωμα ${this._key}`);
         } 
 
         if (randomNumber <= this.addConnectionProbability) {
             const success: boolean = this.addConnectionMutation(innovationDatabase);
-            if (success) {
-                console.log(`Μετάλλαξη: Προσθήκη σύνδεσης στο γονιδίωμα ${this._key}`);
-            } else {
-                console.log(`ΑΠΟΤΥΧΙΑ μετάλλαξης: Προσθήκη σύνδεσης στο γονιδίωμα ${this._key}`);
-            }
         }
 
         if (randomNumber <= this.mutateWeightProbability) {
             this.weightMutation();
-            console.log(`Μετάλλαξη: Αλλαγή βάρους σύνδεσης στο γονιδίωμα ${this._key}`);
         }
     }
 
@@ -180,6 +174,15 @@ class Genome extends BaseClass {
         // Add the new two connections in the list of the connections of the genome
         this.connections.set(newConnectionA.key, newConnectionA);
         this.connections.set(newConnectionB.key, newConnectionB);
+
+
+        Logger.logMessages("Add Node Mutation", [
+            `Genome key: ${this._key}`,
+            `Connection: ${randomConnection}`,
+            `New node: ${newNodeGene}`,
+            `New connection A: ${newConnectionA}`,
+            `New connection B: ${newConnectionB}`
+        ])
     }
 
     /**
@@ -198,7 +201,12 @@ class Genome extends BaseClass {
         const nodeTo: NodeGene = this.getRandomNode();
 
         // If the two nodes are now allowed to connect, then terminate the mutation.
-        if (!this.canConnect(nodeFrom, nodeTo)) return false;
+        if (!this.canConnect(nodeFrom, nodeTo)) {
+            Logger.logMessages("Mutation failure", [
+                `The Add Connection Mutation (${nodeFrom.key} -> ${nodeTo.key}) for genome ${this._key} failed!`
+            ])
+            return false;
+        }
 
         // Check if this mutation, that connects these two nodes, has happened in the past in some other genome
         const existingMutation: AddConnectionMutation | undefined = innovationDatabase.checkAddConnectionMutationExists(nodeFrom.key, nodeTo.key);
@@ -215,6 +223,11 @@ class Genome extends BaseClass {
 
         this.connections.set(newConnectionGene.key, newConnectionGene);
 
+        Logger.logMessages("Add Connection Mutation", [
+            `Genome key: ${this._key}`,
+            `New Connection: ${newConnectionGene}`
+        ])
+
         return true;
     }
 
@@ -224,7 +237,15 @@ class Genome extends BaseClass {
      */
     public weightMutation(): void {
         const randomConnection: ConnectionGene = this.getRandomConnection();
+        const oldWeight: number = randomConnection._weight;
         randomConnection.mutateWeight();
+
+        Logger.logMessages("Weight Mutation", [
+            `Genome key: ${this._key}`,
+            `Connection: ${randomConnection}`,
+            `Old weight: ${oldWeight.toFixed(2)}`,
+            `New weight: ${randomConnection._weight.toFixed(2)}`
+        ])
     }
 
     /**
@@ -361,6 +382,20 @@ class Genome extends BaseClass {
     public includeNode(node: NodeGene): void {
         this.nodes.set(node.key, node);
     }
+
+
+    public override toString(): string {
+        return `{
+            Genome key: ${this._key},
+            fitness: ${this.fitness},
+            nodes: ${this.stringifyNodes()},
+            connections: ${this.stringifyConnections()}
+        }`;
+    }
+
+
+
+
     /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
@@ -508,6 +543,30 @@ class Genome extends BaseClass {
         })
 
         return connectionKeys;
+    }
+
+    private stringifyNodes(): string {
+        let result: string = '[';
+
+        this.nodes.forEach((node: NodeGene, key: number) => {
+            result += `\n\t${key}: ${node}`;
+        })
+
+        result += '\n]';
+
+        return result;
+    }
+
+    private stringifyConnections(): string {
+        let result: string = '[';
+
+        this.connections.forEach((connection: ConnectionGene, key: number) => {
+            result += `\n\t${key}: ${connection}`;
+        })
+
+        result += '\n]';
+
+        return result;
     }
 }
 
