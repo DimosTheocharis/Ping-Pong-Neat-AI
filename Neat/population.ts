@@ -1,5 +1,5 @@
 import Genome from "./Genome/genome";
-import SpeciesSet from "./Species/species";
+import { SpeciesSet } from "./Species/species";
 import { Counter } from "./utils/counter";
 
 
@@ -10,9 +10,9 @@ class Population {
     public population: Map<number, Genome>;
     private populationSize: number;
     private generationCount: number;
-    private genomeCounter: Counter;
+    public genomeCounter: Counter;
 
-    private speciesSet: SpeciesSet;
+    public speciesSet: SpeciesSet;
 
     private totalFitness: number | undefined = undefined;
 
@@ -23,6 +23,10 @@ class Population {
         this.genomeCounter = new Counter();
 
         this.speciesSet = new SpeciesSet();
+    }
+
+    public get _populationSize(): number {
+        return this.populationSize;
     }
 
     /**

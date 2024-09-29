@@ -2,6 +2,7 @@ import ConnectionGene from "../ConnectionGene/connectionGene";
 import Genome from "../Genome/genome";
 import NodeGene from "../NodeGene/nodeGene";
 import { NodeGeneType } from "../NodeGene/nodeGene.types";
+import Population from "../population";
 import Reproduction from "../Reproduction/reproduction";
 
 
@@ -131,8 +132,36 @@ describe("crossover function", () => {
         expect(offspring3.containsConnectionGene(connectionB5)).toBe(true);
         expect(offspring3.containsConnectionGene(connectionB6)).toBe(true);
 
-        // The connection 5,6, get inherited from genomeB as disjoint, so the weight is known
+        // The connection 5, 6 get inherited from genomeB as disjoint, so the weight is known
         expect(offspring3.getConnection(5)!._weight).toBe(1);
         expect(offspring3.getConnection(6)!._weight).toBe(1.3);
+    })
+})
+
+
+describe("reproduction function", () => {
+    it("Should generate the population of the new generation, maintaining the number of members", () => {
+        const populationSystem: Population = new Population(5);
+        populationSystem.initPopulation();
+
+        const currentPopulation: Map<number, Genome> = populationSystem.population;
+        currentPopulation.forEach((genome: Genome, key: number) => {
+            genome._fitness = Math.random() * 100
+        });
+
+        const reproduction: Reproduction = new Reproduction();
+        const newPopulation: Genome[] = reproduction.reproduction(
+            populationSystem.speciesSet,
+            populationSystem.getTotalFitness(),
+            populationSystem._populationSize,
+            populationSystem.genomeCounter
+        )
+
+        expect(newPopulation.length).toBe(populationSystem._populationSize);
+        expect(newPopulation[0]._key).toBe(6);
+        expect(newPopulation[1]._key).toBe(7);
+        expect(newPopulation[2]._key).toBe(8);
+        expect(newPopulation[3]._key).toBe(9);
+        expect(newPopulation[4]._key).toBe(10);
     })
 })

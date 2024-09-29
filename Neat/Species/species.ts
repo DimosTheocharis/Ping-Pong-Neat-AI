@@ -61,9 +61,10 @@ class Species extends BaseClass {
     }
     
     /**
-     * Calculates the probability of a genome to be selected based on its fitness.
+     * Calculates the probability of a member-genome to be selected based on its fitness.
      * The probability is proportional to the ratio of genome fitness to total fitness
-     * @returns 
+     * @returns A map whose keys are the keys of the genomes and values are their probability 
+     * of selection (for reproductions)
      */
     public calculateProbabilities(): Map<number, number> {
         const probabilitiesMap: Map<number, number> = new Map();
@@ -78,6 +79,17 @@ class Species extends BaseClass {
 
         return probabilitiesMap;
     }
+
+    /**
+     * Returns the member-genome which has the given {key}
+     * @param key 
+     * @returns 
+     */
+    public getMember(key: number): Genome | undefined {
+        return this.members.get(key);
+    }
+
+    /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
      * Calculates the sum of fitness of every genome in this species
