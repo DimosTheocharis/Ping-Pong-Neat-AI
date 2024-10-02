@@ -33,21 +33,10 @@ class Population {
         this.initPopulation();
     }
 
+    /*----------------------------------------Public Methods----------------------------------------*/
+
     public get _populationSize(): number {
         return this.populationSize;
-    }
-
-    /**
-     * Initializes the population of genomes with minimal structure (only input and output nodes)
-     */
-    private initPopulation() {
-        for (let i = 0; i < this.populationSize; i++) {
-            const key: number = this.genomeCounter.next();
-            const newGenome: Genome = new Genome(key, 3, 1);
-            newGenome._fitness = Math.random() * 100;
-
-            this.population.set(key, newGenome);
-        }
     }
 
     /**
@@ -76,6 +65,7 @@ class Population {
         
         
         // Step 4: Fitness Sharing
+        this.speciesSystem.fitnessSharing();
 
 
         // Step 5: Reproduction
@@ -86,6 +76,38 @@ class Population {
         // Step 6: Mutations
         newPopulation.forEach((newMember: Genome) => {
             newMember.mutate(this.innovationDatabase);
+        })
+
+        // Step 7: Population replacement
+        this.populationReplacement(newPopulation);
+    }
+
+    /*----------------------------------------Private Methods----------------------------------------*/
+
+    /**
+     * Initializes the population of genomes with minimal structure (only input and output nodes)
+     */
+    private initPopulation() {
+        for (let i = 0; i < this.populationSize; i++) {
+            const key: number = this.genomeCounter.next();
+            const newGenome: Genome = new Genome(key, 3, 1);
+            newGenome._fitness = Math.random() * 100;
+
+            this.population.set(key, newGenome);
+        }
+    }
+
+    /**
+     * Replaces the old population of the genomes with the new one.
+     * It deletes old previous genomes and the species they belong to.
+     * Then it assigns the new population
+     */
+    private populationReplacement(newPopulation: Genome[]): void {
+        this.population.clear();
+        this.speciesSystem.clearData();
+
+        newPopulation.forEach((genome: Genome, key: number) => {
+            this.population.set(key, genome);
         })
     }
 }

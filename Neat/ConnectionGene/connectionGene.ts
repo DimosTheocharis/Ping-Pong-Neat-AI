@@ -28,6 +28,8 @@ class ConnectionGene extends Object {
         this.initializeWeight(weight);
     }
 
+    /*----------------------------------------Public Methods----------------------------------------*/
+
     /**
      * Sets the weight of the connection with a random value between -1 and 1
      */

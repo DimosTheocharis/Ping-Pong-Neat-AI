@@ -2,9 +2,14 @@
 
 class Graph {
 
+    /*----------------------------------------Public Methods----------------------------------------*/
+
     /**
-     * Checks if the addition of the newConnection in the directed graph forms a circle 
-     * @param connections A list of connections (nodeFrom -> nodeTo)
+     * Checks if the addition of the newConnection in the directed graph forms a circle.
+     * Internally it runs DFS.
+     * @param connections A Map object whose keys are nodes (number). The value of each node is a list of other nodes 
+     * (number[]) you can move to through connections.
+     * 
      * @param newConnection The new connection
      * @returns 
      */
@@ -35,12 +40,76 @@ class Graph {
         return false;
     }
 
+
+    /**
+     * Finds the layers of the feedForwardNetwork that consists of the given {nodes} and the given {connections}.
+     * Each layer i includes nodes that are i connections far from the layer of the {inputNodes}. The method
+     * internally runs the BFS.
+     * @param nodes 
+     * @param inputNodes 
+     * @param connections A Map object whose keys are nodes (number) of the network. The value of each node is a list 
+     * of other nodes (number[]) you can move to through connections.
+     */
+    public static feedForwardLayers(nodes: number[], inputNodes: number[], connections: Map<number, number[]>): number[][] {
+        const discovered: Map<number, boolean> = new Map();
+
+        // Set discovered = false for every node
+        nodes.forEach((node: number) => {
+            discovered.set(node, false);
+        })
+
+        // Set discovered = true for input nodes
+        inputNodes.forEach((inputNode: number) => {
+            discovered.set(inputNode, true);
+        })
+
+        const layers: number[][] = [];
+
+        // The first layer should consist of input nodes. (it will be excluded from the final result)
+        layers.push(inputNodes)
+        
+        let currentLayerIndex: number = 0;
+        let running: boolean = true;
+
+        while (running) {
+            const nextLayer: number[] = [];
+            running = false;
+
+            // For every node in the current layer
+            layers[currentLayerIndex].forEach((node: number) => {
+                // For every connection starting from the current node
+                connections.get(node)!.forEach((neighbor: number) => {
+                    if (discovered.get(neighbor) == false) {
+                        // You haven't explore this neighbor yet.
+                        discovered.set(neighbor, true);
+                        nextLayer.push(neighbor);
+                        running = true;
+                    }
+                })
+            })
+
+            // If any node added to the nextLayer, then add the layer to the known layers
+            if (running) {
+                layers.push(nextLayer);
+                currentLayerIndex += 1;
+            }
+        }
+
+        // Remove the input layer and return the others
+        return layers.slice(1);
+    }
+
+
+
+    /*----------------------------------------Private Methods----------------------------------------*/
+
     /**
      * Returns true or false whether or not a circle is formed in the graph, starting from the {currentNode}
      * @param visited Whether or not the algorithm has examined a node
      * @param recurrentStack True means that the particular node is part of the path we currently examine for being a circle 
      * @param currentNode 
-     * @param connections 
+     * @param connections A Map object whose keys are nodes (number) of the network. The value of each node is a list 
+     * of other nodes (number[]) you can move to through connections.
      */
     private static isCyclic(
         visited: Map<number, boolean>, recurrentStack: Map<number, boolean>, currentNode: number,
