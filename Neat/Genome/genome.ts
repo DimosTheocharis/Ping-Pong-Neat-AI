@@ -27,6 +27,9 @@ class Genome extends BaseClass {
     private addNodeProbability: number = 0.05;
     private addConnectionProbability: number = 0.15;
     private mutateWeightProbability: number = 0.8;
+
+    private inputNodeKeys: number[];
+    private outputNodeKeys: number[];
     
 
     public constructor(key: number, totalInputNodes: number, totalOutputNodes: number) {
@@ -37,6 +40,9 @@ class Genome extends BaseClass {
         this.nodes = new Map();
         this.connections = new Map();
         this.fitness = 0;
+
+        this.inputNodeKeys = [];
+        this.outputNodeKeys = [];
 
         this.initializeGenome(totalInputNodes, totalOutputNodes);
     }
@@ -52,6 +58,14 @@ class Genome extends BaseClass {
 
     public get _fitness(): number {
         return this.fitness;
+    }
+
+    public get _inputNodeKeys(): number[] {
+        return [...this.inputNodeKeys];
+    }
+
+    public get _outputNodeKeys(): number[] {
+        return [...this.outputNodeKeys];
     }
 
     /*----------------------------------------Setter Methods ----------------------------------------*/
@@ -393,6 +407,31 @@ class Genome extends BaseClass {
         }`;
     }
 
+    /**
+     * Creates a map whose keys are the keys of the nodes of the genome. The value of each node is a list
+     * with the keys of the nodes that are connected with the node. Only the outgoing connections are included.  
+     * @returns 
+     */
+    public extractConnectionKeys(): Map<number, number[]> {
+        const connectionKeys: Map<number, number[]> = new Map();
+
+        // Initialize the neighbors array for each node
+        this.nodes.forEach((node: NodeGene, key: number) => {
+            connectionKeys.set(key, []);
+        })
+
+        // Add the information (nodeFrom, nodeTo) into the connectionKeys map, for each connection
+        this.connections.forEach((connection: ConnectionGene, key: number) => {
+            const neighbors: number[] = connectionKeys.get(connection._nodeFrom.key)!;
+
+            neighbors.push(connection._nodeTo.key);
+            
+            connectionKeys.set(connection._nodeFrom.key, neighbors);
+        })
+
+        return connectionKeys;
+    }
+
 
 
 
@@ -420,6 +459,7 @@ class Genome extends BaseClass {
             const newNode: NodeGene = new NodeGene(key, NodeGeneType.INPUT);
 
             this.nodes.set(key, newNode);
+            this.inputNodeKeys.push(key);
         }
 
         // Creation of output nodes
@@ -428,6 +468,7 @@ class Genome extends BaseClass {
             const newNode: NodeGene = new NodeGene(key, NodeGeneType.OUTPUT);
 
             this.nodes.set(key, newNode);
+            this.outputNodeKeys.push(key);
         }
     }
 
@@ -523,26 +564,6 @@ class Genome extends BaseClass {
         const randomKey: number = Array.from(this.connections.keys()).sort()[Math.floor(Math.random() * this.connections.size)];
 
         return this.connections.get(randomKey)!;
-    }
-
-    private extractConnectionKeys(): Map<number, number[]> {
-        const connectionKeys: Map<number, number[]> = new Map();
-
-        // Initialize the neighbors array for each node
-        this.nodes.forEach((node: NodeGene, key: number) => {
-            connectionKeys.set(key, []);
-        })
-
-        // Add the information (nodeFrom, nodeTo) into the connectionKeys map, for each connection
-        this.connections.forEach((connection: ConnectionGene, key: number) => {
-            const neighbors: number[] = connectionKeys.get(connection._nodeFrom.key)!;
-
-            neighbors.push(connection._nodeTo.key);
-            
-            connectionKeys.set(connection._nodeFrom.key, neighbors);
-        })
-
-        return connectionKeys;
     }
 
     private stringifyNodes(): string {
