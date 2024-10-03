@@ -89,6 +89,16 @@ class Species extends BaseClass {
         return this.members.get(key);
     }
 
+    /**
+     * The genomes in the same species must share the fitness of their niche.
+     */
+    public shareFitness(): void {
+        const totalMembers: number = this.members.size;
+        this.members.forEach((member: Genome) => {
+            member._fitness = member._fitness / totalMembers;
+        })
+    }
+
     /*----------------------------------------Private Methods----------------------------------------*/
 
     /**
@@ -110,7 +120,7 @@ class Species extends BaseClass {
  */
 class SpeciesSet {
     public speciesMap: Map<number, Species>;
-    private genomicDistanceThreshold: number = 2;
+    private genomicDistanceThreshold: number = 2; // or 3
 
     private speciesCounter: Counter;
 
@@ -148,6 +158,23 @@ class SpeciesSet {
                 this.speciesMap.set(key, newSpecies);
             }
         })
+    }
+
+    /**
+     *  Compute the new fitness of each genome of each species which is calculated as following:
+     *  newFitness = oldFitness / speciesTotalMembers
+     */
+    public fitnessSharing(): void {
+        this.speciesMap.forEach((species: Species, key: number) => {
+            species.shareFitness();
+        })
+    }
+
+    /**
+     * Clears the speciesMap from the the previous species.
+     */
+    public clearData(): void {
+        this.speciesMap.clear();
     }
 }
 

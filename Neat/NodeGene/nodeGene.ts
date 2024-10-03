@@ -21,6 +21,11 @@ class NodeGene extends Object {
         return this.bias;
     }
 
+    /*----------------------------------------Setters Methods----------------------------------------*/
+    public set _bias(bias: number) {
+        this.bias = bias;
+    }
+
     /*----------------------------------------Public Methods----------------------------------------*/
 
 
@@ -39,7 +44,7 @@ class NodeGene extends Object {
     }
 
     /**
-     * Initializes the weight of the connection with a random number between -0.5 and 0.5
+     * Initializes the bias of the node with a random number between -0.5 and 0.5
      */
     private initializeBias(type: NodeGeneType) {
         if (type == NodeGeneType.INPUT) {

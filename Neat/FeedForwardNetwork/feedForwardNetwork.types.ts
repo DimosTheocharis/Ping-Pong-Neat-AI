@@ -1,9 +1,11 @@
 
 
 interface EvaluationData {
-    nodeFrom: number;
-    weight: number;
     bias: number;
+    connections: {
+        nodeFrom: number;
+        weight: number;
+    }[];
 }
 
 export type { EvaluationData };

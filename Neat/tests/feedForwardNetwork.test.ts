@@ -66,34 +66,103 @@ describe("create function", () => {
 
         // Get the values to be tested
         const layers: number[][] = Reflect.get(network, "layers");
-        const nodeEvaluationData: Map<number, EvaluationData[]> = Reflect.get(network, "nodeEvaluationData");
+        const nodeEvaluationData: Map<number, EvaluationData> = Reflect.get(network, "nodeEvaluationData");
 
         // Tests
         expect(nodeEvaluationData.size).toBe(7);
         
-        expect(nodeEvaluationData.get(2)?.length).toBe(1);
-        expect(nodeEvaluationData.get(2)).toContainEqual({nodeFrom: 1, weight: 0.2, bias: node2._bias});
+        expect(nodeEvaluationData.get(2)!.connections.length).toBe(1);
+        expect(nodeEvaluationData.get(2)!.bias).toBe(node2._bias);
+        expect(nodeEvaluationData.get(2)!.connections).toContainEqual({nodeFrom: 1, weight: 0.2});
 
-        expect(nodeEvaluationData.get(3)?.length).toBe(2);
-        expect(nodeEvaluationData.get(3)).toContainEqual({nodeFrom: 1, weight: 0.1, bias: node3._bias});
-        expect(nodeEvaluationData.get(3)).toContainEqual({nodeFrom: 2, weight: 0.3, bias: node3._bias});
+        expect(nodeEvaluationData.get(3)!.connections.length).toBe(2);
+        expect(nodeEvaluationData.get(3)!.bias).toBe(node3._bias);
+        expect(nodeEvaluationData.get(3)!.connections).toContainEqual({nodeFrom: 1, weight: 0.1});
+        expect(nodeEvaluationData.get(3)!.connections).toContainEqual({nodeFrom: 2, weight: 0.3});
 
-        expect(nodeEvaluationData.get(4)?.length).toBe(1);
-        expect(nodeEvaluationData.get(4)).toContainEqual({nodeFrom: 2, weight: 0.4, bias: node4._bias});
+        expect(nodeEvaluationData.get(4)!.connections.length).toBe(1);
+        expect(nodeEvaluationData.get(4)!.bias).toBe(node4._bias);
+        expect(nodeEvaluationData.get(4)!.connections).toContainEqual({nodeFrom: 2, weight: 0.4});
 
-        expect(nodeEvaluationData.get(5)?.length).toBe(3);
-        expect(nodeEvaluationData.get(5)).toContainEqual({nodeFrom: 2, weight: 0.5, bias: node5._bias});
-        expect(nodeEvaluationData.get(5)).toContainEqual({nodeFrom: 4, weight: 0.9, bias: node5._bias});
-        expect(nodeEvaluationData.get(5)).toContainEqual({nodeFrom: 3, weight: 0.6, bias: node5._bias});
+        expect(nodeEvaluationData.get(5)!.connections.length).toBe(3);
+        expect(nodeEvaluationData.get(5)!.bias).toBe(node5._bias);
+        expect(nodeEvaluationData.get(5)!.connections).toContainEqual({nodeFrom: 2, weight: 0.5});
+        expect(nodeEvaluationData.get(5)!.connections).toContainEqual({nodeFrom: 4, weight: 0.9});
+        expect(nodeEvaluationData.get(5)!.connections).toContainEqual({nodeFrom: 3, weight: 0.6});
 
-        expect(nodeEvaluationData.get(6)?.length).toBe(1);
-        expect(nodeEvaluationData.get(6)).toContainEqual({nodeFrom: 5, weight: 1.1, bias: node6._bias});
+        expect(nodeEvaluationData.get(6)!.connections.length).toBe(1);
+        expect(nodeEvaluationData.get(6)!.bias).toBe(node6._bias);
+        expect(nodeEvaluationData.get(6)!.connections).toContainEqual({nodeFrom: 5, weight: 1.1});
 
-        expect(nodeEvaluationData.get(7)?.length).toBe(1);
-        expect(nodeEvaluationData.get(7)).toContainEqual({nodeFrom: 3, weight: 0.7, bias: node7._bias});
+        expect(nodeEvaluationData.get(7)!.connections.length).toBe(1);
+        expect(nodeEvaluationData.get(7)!.bias).toBe(node7._bias);
+        expect(nodeEvaluationData.get(7)!.connections).toContainEqual({nodeFrom: 3, weight: 0.7});
 
-        expect(nodeEvaluationData.get(8)?.length).toBe(2);
-        expect(nodeEvaluationData.get(8)).toContainEqual({nodeFrom: 3, weight: 0.8, bias: node8._bias});
-        expect(nodeEvaluationData.get(8)).toContainEqual({nodeFrom: 7, weight: 1, bias: node8._bias});
+        expect(nodeEvaluationData.get(8)!.connections.length).toBe(2);
+        expect(nodeEvaluationData.get(8)!.bias).toBe(node8._bias);
+        expect(nodeEvaluationData.get(8)!.connections).toContainEqual({nodeFrom: 3, weight: 0.8});
+        expect(nodeEvaluationData.get(8)!.connections).toContainEqual({nodeFrom: 7, weight: 1});
     })
+})
+
+
+
+describe("activate function", () => {
+    it("Should validate that the output of the network with 3 input, 2 hidden nodes and 1 output, for given input, \
+        is correct", () => {
+            const myGenome: Genome = new Genome(1, 0, 0);
+
+            // Nodes creation
+            const node1: NodeGene = new NodeGene(1, NodeGeneType.INPUT);
+            const node2: NodeGene = new NodeGene(2, NodeGeneType.INPUT);
+            const node3: NodeGene = new NodeGene(3, NodeGeneType.INPUT);
+            const node4: NodeGene = new NodeGene(4, NodeGeneType.HIDDEN);
+            const node5: NodeGene = new NodeGene(5, NodeGeneType.HIDDEN);
+            const node6: NodeGene = new NodeGene(6, NodeGeneType.HIDDEN);
+
+            // Set bias for all nodes except input nodes
+            node4._bias = -0.3;
+            node5._bias = 0.1;
+            node6._bias = -0.4;
+
+            // Connections creation
+            const connection1: ConnectionGene = new ConnectionGene(1, node1, node5, -0.7);
+            const connection2: ConnectionGene = new ConnectionGene(2, node1, node6, 0.5);
+            const connection3: ConnectionGene = new ConnectionGene(3, node1, node4, 0.2);
+            const connection4: ConnectionGene = new ConnectionGene(4, node2, node5, 0.3);
+            const connection5: ConnectionGene = new ConnectionGene(5, node3, node5, -0.6);
+            const connection6: ConnectionGene = new ConnectionGene(6, node3, node4, 0.1);
+            const connection7: ConnectionGene = new ConnectionGene(7, node5, node6, 0.4);
+            const connection8: ConnectionGene = new ConnectionGene(8, node6, node4, -0.9);
+
+            // Include nodes
+            myGenome.includeNode(node1);
+            myGenome.includeNode(node2);
+            myGenome.includeNode(node3);
+            myGenome.includeNode(node4);
+            myGenome.includeNode(node5);
+            myGenome.includeNode(node6);
+
+            // Include connections
+            myGenome.includeConnection(connection1);
+            myGenome.includeConnection(connection2);
+            myGenome.includeConnection(connection3);
+            myGenome.includeConnection(connection4);
+            myGenome.includeConnection(connection5);
+            myGenome.includeConnection(connection6);
+            myGenome.includeConnection(connection7);
+            myGenome.includeConnection(connection8);
+
+            // Set some variables
+            Reflect.set(myGenome, "inputNodeKeys", [1, 2, 3]);
+            Reflect.set(myGenome, "outputNodeKeys", [4]);
+
+            // Run the function
+            const network: FeedForwardNetwork = FeedForwardNetwork.create(myGenome);
+            const output: number[] = network.activate([0.7, 0.3, 0.9]);
+
+            // Tests
+            expect(output.length).toBe(1);
+            expect(output[0]).toBeCloseTo(0.369, 2);
+        })
 })
