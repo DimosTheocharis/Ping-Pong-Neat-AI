@@ -31,10 +31,22 @@ class ConnectionGene extends Object {
     /*----------------------------------------Public Methods----------------------------------------*/
 
     /**
-     * Sets the weight of the connection with a random value between -1 and 1
+     * Mutates the weight of the connection as following: 
+     * There is a x% chance of perturbing the current weight using a gaussian distribution
+     * and a (1 - x)% chance of assignent a brand new weight between -1 and 1
      */
     public mutateWeight(): void {
-        this.weight = Math.random() * 2 - 1;
+        const randomNumber: number = Math.random();
+
+        if (randomNumber <= Config._perturbationProbability) {
+            if (Math.random() <= 0.5) {
+                this.weight += Config._mutatePower;
+            } else {
+                this.weight -= Config._mutatePower;
+            }
+        } else {
+            this.weight = Math.random() * 2 - 1;
+        }
     }
 
     /**

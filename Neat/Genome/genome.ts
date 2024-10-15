@@ -20,14 +20,6 @@ class Genome extends BaseClass {
     private nodeKeyCounter: Counter;
     private connectionKeyCounter: Counter; 
 
-    static C1: number = 1; // The coefficient for the excess nodes
-    static C2: number = 1; // The coefficient for the disjoint nodes
-    static C3: number = 0.4; // The coefficient for the weight difference
-
-    private addNodeProbability: number = 0.05;
-    private addConnectionProbability: number = 0.15;
-    private mutateWeightProbability: number = 0.8;
-
     private inputNodeKeys: number[];
     private outputNodeKeys: number[];
     
@@ -120,9 +112,9 @@ class Genome extends BaseClass {
         const W: number = matchingGeneKeys.length > 0 ? totalWeightDifference / matchingGeneKeys.length : 0;
 
         if (N > 0) {
-            genomicDistance = (Genome.C1 * E) / N + (Genome.C2 * D) / N + Genome.C3 * W;
+            genomicDistance = (Config._C1 * E) / N + (Config._C2 * D) / N + Config._C3 * W;
         } else {
-            genomicDistance = Genome.C3 * W;
+            genomicDistance = Config._C3 * W;
         }
  
         return genomicDistance;
@@ -137,15 +129,15 @@ class Genome extends BaseClass {
     public mutate(innovationDatabase: InnovationDatabase): void {
         const randomNumber: number = Math.random();
 
-        if (randomNumber <= this.addNodeProbability) {
+        if (randomNumber <= Config._addNodeProbability) {
             this.addNodeMutation(innovationDatabase);
         } 
 
-        if (randomNumber <= this.addConnectionProbability) {
+        if (randomNumber <= Config._addConnectionProbability) {
             const success: boolean = this.addConnectionMutation(innovationDatabase);
         }
 
-        if (randomNumber <= this.mutateWeightProbability) {
+        if (randomNumber <= Config._mutateWeightProbability) {
             this.weightMutation();
         }
     }
